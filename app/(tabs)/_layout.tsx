@@ -29,7 +29,7 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="account"
+        name="accounts"
         options={{
           title: "Account",
           tabBarIcon: ({ color, size }) => (
