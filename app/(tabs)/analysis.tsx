@@ -9,20 +9,8 @@ const AnalysisScreen = () => {
   const { expenses } = useExpenseContext();
   const { colors } = useTheme();
   const navigation = useNavigation();
-  const { toggleTheme, isDarkTheme } = useThemeContext();
+  const { toggleTheme, isDark } = useThemeContext();
   const now = new Date();
-
-  useLayoutEffect(() => {
-    navigation.setOptions({
-      headerRight: () => (
-        <IconButton
-          icon={isDarkTheme ? "white-balance-sunny" : "moon-waning-crescent"}
-          onPress={toggleTheme}
-          size={24}
-        />
-      ),
-    });
-  }, [navigation, isDarkTheme]);
 
   const getStartOfWeek = (date: Date) => {
     const d = new Date(date);

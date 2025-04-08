@@ -1,11 +1,19 @@
 // context/ThemeContext.tsx
-import React, { createContext, useContext, useState, useMemo } from "react";
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import {
   MD3DarkTheme,
   MD3LightTheme,
   PaperProvider,
-  useTheme as usePaperTheme,
+  ActivityIndicator,
 } from "react-native-paper";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { View, StyleSheet } from "react-native";
 
 const lightTheme = {
   ...MD3LightTheme,
@@ -27,29 +35,60 @@ const darkTheme = {
 
 type ThemeContextType = {
   toggleTheme: () => void;
-  isDarkTheme: boolean;
+  isDark: boolean;
 };
 
 const ThemeContext = createContext<ThemeContextType>({
   toggleTheme: () => {},
-  isDarkTheme: false,
+  isDark: false,
 });
 
 export const useThemeContext = () => useContext(ThemeContext);
 
 export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
-  const [isDarkTheme, setIsDarkTheme] = useState(false);
+  const [isDark, setIsDark] = useState(false);
+  const [isReady, setIsReady] = useState(false);
 
-  const toggleTheme = () => setIsDarkTheme((prev) => !prev);
+  useEffect(() => {
+    const loadTheme = async () => {
+      const savedTheme = await AsyncStorage.getItem("theme");
+      if (savedTheme === "dark") {
+        setIsDark(true);
+      }
+      setIsReady(true);
+    };
+    loadTheme();
+  }, []);
 
-  const theme = useMemo(
-    () => (isDarkTheme ? darkTheme : lightTheme),
-    [isDarkTheme]
-  );
+  const toggleTheme = async () => {
+    const newTheme = !isDark;
+    setIsDark(newTheme);
+    await AsyncStorage.setItem("theme", newTheme ? "dark" : "light");
+  };
+
+  const theme = useMemo(() => (isDark ? darkTheme : lightTheme), [isDark]);
+
+  if (!isReady) {
+    return (
+      <PaperProvider theme={theme}>
+        <View style={styles.splashContainer}>
+          <ActivityIndicator animating size="large" />
+        </View>
+      </PaperProvider>
+    );
+  }
 
   return (
-    <ThemeContext.Provider value={{ toggleTheme, isDarkTheme }}>
+    <ThemeContext.Provider value={{ toggleTheme, isDark }}>
       <PaperProvider theme={theme}>{children}</PaperProvider>
     </ThemeContext.Provider>
   );
 };
+
+const styles = StyleSheet.create({
+  splashContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+});

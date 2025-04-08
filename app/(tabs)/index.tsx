@@ -21,7 +21,7 @@ type SortOption = "newest" | "oldest" | "high" | "low";
 export default function ExpenseList() {
   const { expenses, deleteExpense, addExpense } = useExpenseContext();
   const router = useRouter();
-  const { colors } = useTheme();
+  const { colors, dark } = useTheme();
 
   const [snackbarVisible, setSnackbarVisible] = useState(false);
   const [deletedExpense, setDeletedExpense] = useState<Expense | null>(null);
@@ -100,15 +100,24 @@ export default function ExpenseList() {
         overshootLeft={false}
         overshootRight={false}
       >
-        <Card style={styles.card} mode="outlined">
+        <Card
+          style={[styles.card, { backgroundColor: colors.surface }]}
+          mode="outlined"
+        >
           <Card.Content>
-            <Text variant="titleMedium" style={styles.title}>
+            <Text
+              variant="titleMedium"
+              style={[styles.title, { color: colors.onSurface }]}
+            >
               {item.title}
             </Text>
-            <Text variant="bodyMedium" style={styles.amount}>
+            <Text
+              variant="bodyMedium"
+              style={[styles.amount, { color: "green" }]}
+            >
               ₹ {item.amount.toFixed(2)}
             </Text>
-            <Text variant="bodySmall" style={styles.date}>
+            <Text variant="bodySmall" style={{ color: colors.onSurface }}>
               {new Date(item.date).toLocaleDateString()}
             </Text>
           </Card.Content>
@@ -119,12 +128,12 @@ export default function ExpenseList() {
 
   return (
     <>
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
         {expenses.length > 0 ? (
           <FlatList
             data={sortedExpenses}
             keyExtractor={(item) => item.id}
-            contentContainerStyle={styles.list}
+            contentContainerStyle={[styles.list, { paddingBottom: 120 }]}
             renderItem={renderItem}
           />
         ) : (
@@ -142,51 +151,71 @@ export default function ExpenseList() {
             onPress: handleUndo,
           }}
           duration={3000}
+          style={styles.snackbar}
         >
-          Expense deleted
+          Expense Deleted
         </Snackbar>
       </View>
 
       <FAB
         icon="sort"
-        style={styles.sortFab}
+        style={[styles.sortFab, { backgroundColor: colors.primary }]}
         onPress={() => setSortVisible(true)}
         color="white"
       />
 
       <FAB
         icon="plus"
-        style={styles.fab}
+        style={[styles.fab, { backgroundColor: colors.primary }]}
         onPress={() => router.push("/modals/add")}
+        color="white"
       />
 
       <Portal>
         <Modal
           visible={sortVisible}
           onDismiss={() => setSortVisible(false)}
-          contentContainerStyle={styles.bottomSheet}
+          contentContainerStyle={[
+            styles.bottomSheet,
+            { backgroundColor: colors.surface },
+          ]}
         >
-          <Text variant="titleMedium" style={{ marginBottom: 12 }}>
+          <Text
+            variant="titleMedium"
+            style={{ marginBottom: 12, color: colors.onSurface }}
+          >
             Sort Expenses
           </Text>
           <List.Item
             title="Newest First"
-            left={() => <List.Icon icon="calendar-arrow-right" />}
+            titleStyle={{ color: colors.onSurface }}
+            left={() => (
+              <List.Icon icon="calendar-arrow-right" color={colors.onSurface} />
+            )}
             onPress={() => handleSort("newest")}
           />
           <List.Item
             title="Oldest First"
-            left={() => <List.Icon icon="calendar-arrow-left" />}
+            titleStyle={{ color: colors.onSurface }}
+            left={() => (
+              <List.Icon icon="calendar-arrow-left" color={colors.onSurface} />
+            )}
             onPress={() => handleSort("oldest")}
           />
           <List.Item
             title="Highest First"
-            left={() => <List.Icon icon="arrow-up-bold" />}
+            titleStyle={{ color: colors.onSurface }}
+            left={() => (
+              <List.Icon icon="arrow-up-bold" color={colors.onSurface} />
+            )}
             onPress={() => handleSort("high")}
           />
           <List.Item
             title="Lowest First"
-            left={() => <List.Icon icon="arrow-down-bold" />}
+            titleStyle={{ color: colors.onSurface }}
+            left={() => (
+              <List.Icon icon="arrow-down-bold" color={colors.onSurface} />
+            )}
             onPress={() => handleSort("low")}
           />
         </Modal>
@@ -206,7 +235,6 @@ const styles = StyleSheet.create({
   card: {
     borderRadius: 12,
     overflow: "hidden",
-    backgroundColor: "#fff",
   },
   title: {
     fontWeight: "bold",
@@ -214,11 +242,6 @@ const styles = StyleSheet.create({
   },
   amount: {
     fontSize: 16,
-    color: "green",
-  },
-  date: {
-    marginTop: 4,
-    color: "#888",
   },
   empty: {
     flex: 1,
@@ -234,13 +257,18 @@ const styles = StyleSheet.create({
     position: "absolute",
     right: 16,
     bottom: 90,
-    backgroundColor: "#6200ee", // Primary
   },
   swipeAction: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
     borderRadius: 12,
+  },
+  snackbar: {
+    position: "absolute",
+    bottom: 0,
+    alignSelf: "center",
+    zIndex: 10,
   },
   leftAction: {
     backgroundColor: "#f44336",
@@ -264,7 +292,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   bottomSheet: {
-    backgroundColor: "white",
     padding: 20,
     marginHorizontal: 16,
     borderRadius: 16,

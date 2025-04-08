@@ -59,8 +59,11 @@ export default function EditExpense() {
   };
 
   return (
-    <View style={styles.container}>
-      <Text variant="titleLarge" style={styles.header}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <Text
+        variant="titleLarge"
+        style={[styles.header, { color: colors.onBackground }]}
+      >
         Edit Expense
       </Text>
 
@@ -121,7 +124,6 @@ const styles = StyleSheet.create({
   container: {
     padding: 16,
     flex: 1,
-    backgroundColor: "#fff",
   },
   header: {
     marginBottom: 24,

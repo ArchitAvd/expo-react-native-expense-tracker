@@ -23,6 +23,7 @@ export default function AddExpense() {
 
   const router = useRouter();
   const { addExpense } = useExpenseContext();
+  const { colors } = useTheme();
 
   const handleSave = () => {
     if (!title || !amount) {
@@ -42,12 +43,15 @@ export default function AddExpense() {
 
   return (
     <KeyboardAvoidingView
-      style={styles.container}
+      style={[styles.container, { backgroundColor: colors.background }]}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
-      <Card style={styles.card}>
+      <Card style={styles.card} mode="elevated">
         <Card.Content>
-          <Text variant="titleLarge" style={styles.header}>
+          <Text
+            variant="titleLarge"
+            style={[styles.header, { color: colors.onBackground }]}
+          >
             Add New Expense
           </Text>
 
@@ -109,7 +113,6 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 16,
     justifyContent: "center",
-    backgroundColor: "#f5f5f5",
   },
   card: {
     borderRadius: 16,
