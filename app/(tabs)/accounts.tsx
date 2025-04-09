@@ -1,5 +1,9 @@
-import { View, StyleSheet } from "react-native";
-import React, { useLayoutEffect } from "react";
+import { View, StyleSheet, Platform } from "react-native";
+import * as Notifications from "expo-notifications";
+import DateTimePicker, {
+  DateTimePickerEvent,
+} from "@react-native-community/datetimepicker";
+import React, { useLayoutEffect, useEffect, useState } from "react";
 import {
   Text,
   List,
@@ -11,8 +15,8 @@ import {
   Button,
   IconButton,
 } from "react-native-paper";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useThemeContext } from "@/context/ThemeContext";
-import { useState } from "react";
 import { useNavigation } from "@react-navigation/native";
 
 export default function AccountScreen() {
@@ -20,15 +24,53 @@ export default function AccountScreen() {
   const { toggleTheme, isDark } = useThemeContext();
   const navigation = useNavigation();
 
-  const [name, setName] = useState("John Doe");
-  const [email, setEmail] = useState("john.doe@example.com");
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
   const [editMode, setEditMode] = useState(false);
+  const [dailyReminderEnabled, setDailyReminderEnabled] = useState(false);
+  const [reminderEnabled, setReminderEnabled] = useState(false);
+  const [reminderTime, setReminderTime] = useState(new Date(0, 0, 0, 21, 0)); // default 9 PM
+  const [showTimePicker, setShowTimePicker] = useState(false);
 
-  const initial = name.charAt(0).toUpperCase();
+  useEffect(() => {
+    (async () => {
+      const enabled = await AsyncStorage.getItem("reminderEnabled");
+      const storedTime = await AsyncStorage.getItem("reminderTime");
 
-  const handleSave = () => {
+      if (enabled === "true") setReminderEnabled(true);
+      if (storedTime) setReminderTime(new Date(storedTime));
+    })();
+  }, []);
+
+  const initial = name ? name.charAt(0).toUpperCase() : "?";
+
+  useEffect(() => {
+    const loadUserData = async () => {
+      const storedName = await AsyncStorage.getItem("user_name");
+      const storedEmail = await AsyncStorage.getItem("user_email");
+
+      if (storedName) setName(storedName);
+      else setName("John Doe");
+
+      if (storedEmail) setEmail(storedEmail);
+      else setEmail("john.doe@example.com");
+    };
+
+    loadUserData();
+  }, []);
+
+  useEffect(() => {
+    const loadReminderSetting = async () => {
+      const value = await AsyncStorage.getItem("dailyReminder");
+      setDailyReminderEnabled(value === "true");
+    };
+    loadReminderSetting();
+  }, []);
+
+  const handleSave = async () => {
+    await AsyncStorage.setItem("user_name", name);
+    await AsyncStorage.setItem("user_email", email);
     setEditMode(false);
-    // optional: persist changes
   };
 
   useLayoutEffect(() => {
@@ -43,6 +85,45 @@ export default function AccountScreen() {
         ),
     });
   }, [navigation, editMode]);
+
+  const handleTimeChange = async (
+    event: DateTimePickerEvent,
+    selectedDate?: Date
+  ) => {
+    if (selectedDate) {
+      setReminderTime(selectedDate);
+      await AsyncStorage.setItem("reminderTime", selectedDate.toISOString());
+      if (reminderEnabled) scheduleNotification(selectedDate);
+    }
+    setShowTimePicker(false);
+  };
+
+  const handleToggleReminder = async (value: boolean) => {
+    setReminderEnabled(value);
+    await AsyncStorage.setItem("reminderEnabled", value.toString());
+
+    if (value) {
+      scheduleNotification(reminderTime);
+    } else {
+      await Notifications.cancelAllScheduledNotificationsAsync();
+    }
+  };
+
+  const scheduleNotification = async (time: Date) => {
+    await Notifications.cancelAllScheduledNotificationsAsync();
+
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: "💸 Time to update your expenses!",
+        body: "Don’t forget to log today’s expenses.",
+      },
+      trigger: {
+        hour: time.getHours(),
+        minute: time.getMinutes(),
+        repeats: true,
+      } as any,
+    });
+  };
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -95,6 +176,38 @@ export default function AccountScreen() {
             right={() => <Switch value={isDark} onValueChange={toggleTheme} />}
           />
           <Divider />
+          <List.Item
+            title="Daily Reminder"
+            left={() => <List.Icon icon="bell-outline" />}
+            right={() => (
+              <Switch
+                value={reminderEnabled}
+                onValueChange={handleToggleReminder}
+              />
+            )}
+          />
+
+          {reminderEnabled && (
+            <List.Item
+              title={`Reminder Time: ${reminderTime.toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+              })}`}
+              left={() => <List.Icon icon="clock-outline" />}
+              onPress={() => setShowTimePicker(true)}
+            />
+          )}
+
+          {showTimePicker && (
+            <DateTimePicker
+              value={reminderTime}
+              mode="time"
+              display={Platform.OS === "ios" ? "spinner" : "default"}
+              onChange={handleTimeChange}
+            />
+          )}
+          <Divider />
+
           <List.Item
             title="About"
             description="App version 1.0.0"
